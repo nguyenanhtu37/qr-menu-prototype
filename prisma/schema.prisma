@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MenuCategory {
+  FOOD
+  SIDE
+  DRINK
+}
+
+enum OrderStatus {
+  PENDING
+}
+
+model Table {
+  id     Int     @id @default(autoincrement())
+  name   String
+  orders Order[]
+
+  @@map("tables")
+}
+
+model MenuItem {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  price       Int
+  imageUrl    String?
+  category    MenuCategory
+  isAvailable Boolean      @default(true)
+
+  orderItems OrderItem[]
+
+  @@index([category])
+  @@map("menu_items")
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  tableId   Int
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+
+  table Table       @relation(fields: [tableId], references: [id])
+  items OrderItem[]
+
+  @@index([tableId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int @id @default(autoincrement())
+  orderId    Int
+  menuItemId Int
+  quantity   Int
+  unitPrice  Int
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
