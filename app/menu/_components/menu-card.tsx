@@ -6,9 +6,10 @@ import { MenuImage } from "./menu-image";
 type MenuCardProps = {
   item: MenuItemDTO;
   tableId: number;
+  orderedQuantity?: number;
 };
 
-export function MenuCard({ item, tableId }: MenuCardProps) {
+export function MenuCard({ item, tableId, orderedQuantity = 0 }: MenuCardProps) {
   return (
     <Link
       href={`/menu/item/${item.id}?tableId=${tableId}`}
@@ -31,6 +32,11 @@ export function MenuCard({ item, tableId }: MenuCardProps) {
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-stone-600">
           {item.description}
         </p>
+        {orderedQuantity > 0 ? (
+          <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Đã gọi {orderedQuantity}
+          </p>
+        ) : null}
       </div>
     </Link>
   );

@@ -13,10 +13,15 @@ type ItemDetailProps = {
 };
 
 export function ItemDetail({ item, tableId }: ItemDetailProps) {
-  const { getQuantity, addItem, setQuantity, removeItem } = useCart();
+  const { currentOrder, getQuantity, addItem, setQuantity, removeItem } =
+    useCart();
   const [draftQuantity, setDraftQuantity] = useState(1);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cartQuantity = getQuantity(item.id);
+  const confirmedQuantity =
+    currentOrder?.items.find(
+      (orderedItem) => orderedItem.menuItemId === item.id,
+    )?.quantity ?? 0;
   const isInCart = cartQuantity > 0;
   const quantity = isInCart ? cartQuantity : draftQuantity;
 
@@ -118,9 +123,15 @@ export function ItemDetail({ item, tableId }: ItemDetailProps) {
             </div>
           </div>
 
+          {confirmedQuantity > 0 ? (
+            <p className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+              Bàn này đã gọi {confirmedQuantity} món này.
+            </p>
+          ) : null}
+
           {isInCart ? (
             <p className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-              Món này đã có trong order.
+              Món này đã có trong lượt gọi thêm.
             </p>
           ) : (
             <button
@@ -128,7 +139,7 @@ export function ItemDetail({ item, tableId }: ItemDetailProps) {
               onClick={() => addItem(item.id, draftQuantity)}
               className="mt-5 flex h-12 w-full items-center justify-center rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700"
             >
-              Thêm vào order
+              Thêm vào lượt gọi thêm
             </button>
           )}
         </section>
@@ -138,7 +149,7 @@ export function ItemDetail({ item, tableId }: ItemDetailProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
           <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-2xl">
             <h2 className="text-lg font-semibold text-stone-950">
-              Bạn có muốn xóa món này khỏi order không?
+              Bạn có muốn xóa món này khỏi lượt gọi thêm không?
             </h2>
             <div className="mt-5 flex justify-end gap-3">
               <button
@@ -146,14 +157,14 @@ export function ItemDetail({ item, tableId }: ItemDetailProps) {
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
                 onClick={confirmRemove}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
               >
-                Confirm
+                Xác nhận
               </button>
             </div>
           </div>

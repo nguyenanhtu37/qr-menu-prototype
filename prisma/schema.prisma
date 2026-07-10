@@ -15,6 +15,7 @@ enum MenuCategory {
 
 enum OrderStatus {
   PENDING
+  COMPLETED
 }
 
 model Table {

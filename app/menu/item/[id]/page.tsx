@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { getCurrentOrderForTable } from "@/lib/current-order";
 import { prisma } from "@/lib/prisma";
 import type { MenuCategory, MenuItemDTO } from "@/lib/menu-types";
 import { parseTableIdParam } from "@/lib/table";
@@ -44,7 +45,7 @@ export default async function MenuItemPage({
     return <QrError />;
   }
 
-  const [table, rawMenuItem, rawMenuItems] = await Promise.all([
+  const [table, rawMenuItem, rawMenuItems, currentOrder] = await Promise.all([
     prisma.table.findUnique({
       where: { id: tableId },
       select: {
@@ -78,6 +79,7 @@ export default async function MenuItemPage({
         category: true,
       },
     }),
+    getCurrentOrderForTable(tableId),
   ]);
 
   if (!table) {
@@ -92,7 +94,11 @@ export default async function MenuItemPage({
   const menuItems = rawMenuItems.map(toMenuItemDTO);
 
   return (
-    <CustomerOrderShell table={table} menuItems={menuItems}>
+    <CustomerOrderShell
+      table={table}
+      menuItems={menuItems}
+      initialCurrentOrder={currentOrder}
+    >
       <ItemDetail item={menuItem} tableId={table.id} />
     </CustomerOrderShell>
   );
