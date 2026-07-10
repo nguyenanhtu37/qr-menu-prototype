@@ -8,7 +8,11 @@ type FloatingOrderSummaryProps = {
 };
 
 export function FloatingOrderSummary({ onOpen }: FloatingOrderSummaryProps) {
-  const { totalQuantity, subtotal } = useCart();
+  const { currentOrder, totalQuantity, subtotal } = useCart();
+  const orderedQuantity = currentOrder?.totalQuantity ?? 0;
+  const orderedSubtotal = currentOrder?.subtotal ?? 0;
+  const combinedQuantity = orderedQuantity + totalQuantity;
+  const combinedSubtotal = orderedSubtotal + subtotal;
 
   return (
     <button
@@ -17,9 +21,11 @@ export function FloatingOrderSummary({ onOpen }: FloatingOrderSummaryProps) {
       className="fixed bottom-5 left-4 right-4 z-40 flex min-h-14 items-center justify-between rounded-lg bg-zinc-950 px-5 py-4 text-left text-white shadow-2xl transition hover:bg-zinc-800 sm:left-auto sm:w-80"
     >
       <span className="text-sm font-semibold">
-        {totalQuantity} món | {formatVnd(subtotal)}
+        {combinedQuantity} món | {formatVnd(combinedSubtotal)}
       </span>
-      <span className="text-sm text-zinc-300">Xem order</span>
+      <span className="text-sm text-zinc-300">
+        {totalQuantity > 0 ? "Xác nhận thêm" : "Xem order"}
+      </span>
     </button>
   );
 }

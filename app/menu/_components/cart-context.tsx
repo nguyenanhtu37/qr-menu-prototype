@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import type { MenuItemDTO } from "@/lib/menu-types";
+import type { CurrentOrderDTO } from "@/lib/order-types";
 
 type CartState = Record<string, number>;
 
@@ -20,6 +21,8 @@ export type CartLine = {
 
 type CartContextValue = {
   tableId: number;
+  currentOrder: CurrentOrderDTO | null;
+  currentOrderLoading: boolean;
   cartItems: CartLine[];
   totalQuantity: number;
   subtotal: number;
@@ -28,6 +31,8 @@ type CartContextValue = {
   setQuantity: (menuItemId: number, quantity: number) => void;
   removeItem: (menuItemId: number) => void;
   clearCart: () => void;
+  refreshCurrentOrder: () => Promise<CurrentOrderDTO | null>;
+  setCurrentOrder: (order: CurrentOrderDTO | null) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -72,16 +77,21 @@ function readCart(storageKey: string): CartState {
 type CartProviderProps = {
   tableId: number;
   menuItems: MenuItemDTO[];
+  initialCurrentOrder: CurrentOrderDTO | null;
   children: React.ReactNode;
 };
 
 export function CartProvider({
   tableId,
   menuItems,
+  initialCurrentOrder,
   children,
 }: CartProviderProps) {
   const storageKey = `qr-menu-cart:${tableId}`;
   const [cart, setCart] = useState<CartState>({});
+  const [currentOrder, setCurrentOrderState] =
+    useState<CurrentOrderDTO | null>(initialCurrentOrder);
+  const [currentOrderLoading, setCurrentOrderLoading] = useState(false);
   const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -171,9 +181,39 @@ export function CartProvider({
     setCart({});
   }, []);
 
+  const refreshCurrentOrder = useCallback(async () => {
+    setCurrentOrderLoading(true);
+
+    try {
+      const response = await fetch(`/api/orders?tableId=${tableId}`, {
+        cache: "no-store",
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        order?: CurrentOrderDTO | null;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Không thể tải order hiện tại.");
+      }
+
+      const order = result.order ?? null;
+      setCurrentOrderState(order);
+      return order;
+    } finally {
+      setCurrentOrderLoading(false);
+    }
+  }, [tableId]);
+
+  const setCurrentOrder = useCallback((order: CurrentOrderDTO | null) => {
+    setCurrentOrderState(order);
+  }, []);
+
   const value = useMemo<CartContextValue>(
     () => ({
       tableId,
+      currentOrder,
+      currentOrderLoading,
       cartItems,
       totalQuantity,
       subtotal,
@@ -182,9 +222,13 @@ export function CartProvider({
       setQuantity,
       removeItem,
       clearCart,
+      refreshCurrentOrder,
+      setCurrentOrder,
     }),
     [
       tableId,
+      currentOrder,
+      currentOrderLoading,
       cartItems,
       totalQuantity,
       subtotal,
@@ -193,6 +237,8 @@ export function CartProvider({
       setQuantity,
       removeItem,
       clearCart,
+      refreshCurrentOrder,
+      setCurrentOrder,
     ],
   );
 

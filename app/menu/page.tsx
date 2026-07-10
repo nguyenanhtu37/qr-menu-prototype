@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { getCurrentOrderForTable } from "@/lib/current-order";
 import { prisma } from "@/lib/prisma";
 import {
   categoryLabels,
@@ -39,7 +40,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
     return <QrError />;
   }
 
-  const [table, rawMenuItems] = await Promise.all([
+  const [table, rawMenuItems, currentOrder] = await Promise.all([
     prisma.table.findUnique({
       where: { id: tableId },
       select: {
@@ -59,6 +60,7 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
         category: true,
       },
     }),
+    getCurrentOrderForTable(tableId),
   ]);
 
   if (!table) {
@@ -66,9 +68,16 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
   }
 
   const menuItems = rawMenuItems.map(toMenuItemDTO);
+  const orderedQuantitiesByMenuItemId = new Map(
+    currentOrder?.items.map((item) => [item.menuItemId, item.quantity]) ?? [],
+  );
 
   return (
-    <CustomerOrderShell table={table} menuItems={menuItems}>
+    <CustomerOrderShell
+      table={table}
+      menuItems={menuItems}
+      initialCurrentOrder={currentOrder}
+    >
       <main className="bg-stone-50">
         <header className="border-b border-stone-200 bg-white">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
@@ -112,7 +121,14 @@ export default async function MenuPage({ searchParams }: MenuPageProps) {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {items.map((item) => (
-                      <MenuCard key={item.id} item={item} tableId={table.id} />
+                      <MenuCard
+                        key={item.id}
+                        item={item}
+                        tableId={table.id}
+                        orderedQuantity={
+                          orderedQuantitiesByMenuItemId.get(item.id) ?? 0
+                        }
+                      />
                     ))}
                   </div>
                 </section>
