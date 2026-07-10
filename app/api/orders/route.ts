@@ -8,6 +8,11 @@ type CreateOrderBody = {
   items?: unknown;
 };
 
+type OrderMenuItem = {
+  id: number;
+  price: number;
+};
+
 function jsonError(message: string, status: number) {
   return Response.json({ error: message }, { status });
 }
@@ -83,6 +88,10 @@ export async function POST(request: Request) {
           id: { in: menuItemIds },
           isAvailable: true,
         },
+        select: {
+          id: true,
+          price: true,
+        },
       }),
     ]);
 
@@ -94,7 +103,10 @@ export async function POST(request: Request) {
       return jsonError("Một hoặc nhiều món không còn khả dụng.", 400);
     }
 
-    const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
+    const orderMenuItems = menuItems as OrderMenuItem[];
+    const menuItemsById = new Map<number, OrderMenuItem>(
+      orderMenuItems.map((item) => [item.id, item]),
+    );
 
     const order = await prisma.order.create({
       data: {
